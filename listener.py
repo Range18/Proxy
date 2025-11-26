@@ -1,8 +1,8 @@
 import asyncio
 
+from connection_handler import handle_connection
 from constants import CHUNK_SIZE
 from http_parser import HttpParser
-from connection_handler import ConnectionHandler
 
 
 class Listener:
@@ -25,10 +25,12 @@ class Listener:
             await writer.wait_closed()
             return
 
+        print(host)
+
         if ":" in host:
             address, port = host.split(":", 1)
             port = int(port)
         else:
             address, port = host, 80
 
-        await ConnectionHandler.handle_connection(address, port, request, reader, writer)
+        await handle_connection(address, port, request, reader, writer)
