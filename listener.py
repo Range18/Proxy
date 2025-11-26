@@ -1,32 +1,34 @@
-import socket
+import asyncio
 
+from constants import CHUNK_SIZE
 from http_parser import HttpParser
+from connection_handler import ConnectionHandler
 
 
 class Listener:
     def __init__(self):
-        self.server = None
         self.http_parser = HttpParser()
 
-    def listen(self, address, port, connections=1):
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind((address, port))
-        server.listen(connections)
-        self.server = server
-        return server
+    async def handle_client(self, reader: asyncio.StreamReader,
+                            writer: asyncio.StreamWriter):
+        data = await reader.read(CHUNK_SIZE)
+        if not data:
+            writer.close()
+            await writer.wait_closed()
+            return
 
-    def accept_connection(self):
-        client, addr = self.server.accept()
+        request = self.http_parser.parse_http_request(data)
 
-        data_encoded = client.recv(65536)
-        request = self.http_parser.parse_http_request(data_encoded)
+        host = request.headers.get("host")
+        if not host:
+            writer.close()
+            await writer.wait_closed()
+            return
 
-        print(request.headers['Host'])
-        addr, port = request.headers['Host'].split(':')
+        if ":" in host:
+            address, port = host.split(":", 1)
+            port = int(port)
+        else:
+            address, port = host, 80
 
-        dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        dest_socket.connect((addr, int(port)))
-        dest_socket.sendall()
-
-        client.shutdown(1)
-        client.close()
+        await ConnectionHandler.handle_connection(address, port, request, reader, writer)
