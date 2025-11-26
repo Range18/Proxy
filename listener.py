@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from blacklist_service import BlacklistService
 from connection_handler import handle_connection
 from constants import CHUNK_SIZE, GREEN
 from http_parser import HttpParser
@@ -11,6 +12,7 @@ logger = logging.getLogger("connection_handler")
 class Listener:
     def __init__(self):
         self.http_parser = HttpParser()
+        self.blacklist_service = BlacklistService()
 
     async def handle_client(self, reader: asyncio.StreamReader,
                             writer: asyncio.StreamWriter):
@@ -33,6 +35,12 @@ class Listener:
             port = int(port)
         else:
             address, port = host, 80
+
+        if self.blacklist_service.is_banned(address, port):
+            #TODO send rofls BAN WINDOW
+            writer.close()
+            await writer.wait_closed()
+            return
 
         peer_ip, peer_port = writer.get_extra_info("peername")
         logger.info(
