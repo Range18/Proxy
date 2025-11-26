@@ -1,8 +1,11 @@
 import asyncio
+import logging
 
 from connection_handler import handle_connection
-from constants import CHUNK_SIZE
+from constants import CHUNK_SIZE, GREEN
 from http_parser import HttpParser
+
+logger = logging.getLogger("connection_handler")
 
 
 class Listener:
@@ -11,7 +14,7 @@ class Listener:
 
     async def handle_client(self, reader: asyncio.StreamReader,
                             writer: asyncio.StreamWriter):
-        data = await reader.read(CHUNK_SIZE)
+        data = await self.read_full_request(reader)
         if not data:
             writer.close()
             await writer.wait_closed()
@@ -25,12 +28,22 @@ class Listener:
             await writer.wait_closed()
             return
 
-        print(host)
-
         if ":" in host:
             address, port = host.split(":", 1)
             port = int(port)
         else:
             address, port = host, 80
 
+        peer_ip, peer_port = writer.get_extra_info("peername")
+        logger.info(
+            f"New connection: from {peer_ip}:{peer_port} to {address}:{port} {request.method} {request.path}")
         await handle_connection(address, port, request, reader, writer)
+
+    async def read_full_request(self, reader):
+        buffer = b""
+        while b"\r\n\r\n" not in buffer:
+            chunk = await reader.read(CHUNK_SIZE)
+            if not chunk:
+                break
+            buffer += chunk
+        return buffer

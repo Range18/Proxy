@@ -12,7 +12,7 @@ class HttpParser:
         headers_bytes = encoded_data[:sep_position]
         body_bytes = encoded_data[sep_position + len(separator):]
 
-        headers_text = headers_bytes.decode()
+        headers_text = headers_bytes.decode("iso-8859-1")
 
         header_lines = headers_text.split("\r\n")
         if not header_lines or not header_lines[0]:

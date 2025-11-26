@@ -1,7 +1,5 @@
 import asyncio
 
-from Tools.scripts.make_ctype import method
-
 from constants import CHUNK_SIZE
 from http_request import HttpRequest
 
@@ -28,12 +26,20 @@ async def handle_connection(address: str, port: int, request: HttpRequest, reade
     await asyncio.gather(
         relay(reader, remote_writer),
         relay(remote_reader, writer),
+        return_exceptions=True
     )
 
-    remote_writer.close()
-    writer.close()
-    await remote_writer.wait_closed()
-    await writer.wait_closed()
+    try:
+        remote_writer.close()
+        await remote_writer.wait_closed()
+    except:
+        pass
+
+    try:
+        writer.close()
+        await writer.wait_closed()
+    except:
+        pass
 
 
 async def relay(src_reader: asyncio.StreamReader,
@@ -45,5 +51,12 @@ async def relay(src_reader: asyncio.StreamReader,
                 break
             dst_writer.write(chunk)
             await dst_writer.drain()
+    except ConnectionResetError:
+        pass
     except Exception as e:
         print("relay error:", e)
+    finally:
+        try:
+            dst_writer.write_eof()
+        except:
+            pass

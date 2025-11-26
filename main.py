@@ -1,6 +1,16 @@
 import asyncio
+import logging
 
 from listener import Listener
+from logger_formatter import LoggerFormatter
+
+handler = logging.StreamHandler()
+handler.setFormatter(LoggerFormatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[handler]
+)
 
 ADDRESS = "127.0.0.1"
 PORT = 8080
