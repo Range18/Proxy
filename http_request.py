@@ -1,3 +1,6 @@
+import json
+
+
 class HttpRequest:
     def __init__(
             self,
@@ -21,3 +24,11 @@ class HttpRequest:
     @property
     def host(self) -> str | None:
         return self.get_header("host")
+
+    def text(self, encoding: str = "utf-8", errors: str = "replace") -> str:
+        """Тело как текст."""
+        return self.body.decode(encoding, errors)
+
+    def json(self, encoding: str = "utf-8"):
+        """Тело как JSON-объект (dict/list)."""
+        return json.loads(self.body.decode(encoding))
