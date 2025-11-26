@@ -1,5 +1,7 @@
 import asyncio
 
+from Tools.scripts.make_ctype import method
+
 from constants import CHUNK_SIZE
 from http_request import HttpRequest
 
@@ -16,8 +18,12 @@ async def handle_connection(address: str, port: int, request: HttpRequest, reade
         await writer.wait_closed()
         return
 
-    remote_writer.write(request.original_request_encoded)
-    await remote_writer.drain()
+    if request.method == "CONNECT":
+        writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+        await writer.drain()
+    else:
+        remote_writer.write(request.original_request_encoded)
+        await remote_writer.drain()
 
     await asyncio.gather(
         relay(reader, remote_writer),
