@@ -1,5 +1,5 @@
 from typing import Dict, List
-from http_request import HttpRequest
+from models.http_request import HttpRequest
 
 
 class HttpParser:
@@ -10,7 +10,7 @@ class HttpParser:
             raise ValueError("Invalid HTTP request: no header/body separator")
 
         headers_bytes = encoded_data[:sep_position]
-        body_bytes = encoded_data[sep_position + len(separator):]
+        body_bytes = encoded_data[sep_position + len(separator) :]
 
         headers_text = headers_bytes.decode("iso-8859-1")
 
@@ -29,7 +29,9 @@ class HttpParser:
         http_version = http_line_parts[-1]
         path = " ".join(http_line_parts[1:-1])
 
-        return HttpRequest(method, path, http_version, headers_dict, body_bytes, encoded_data)
+        return HttpRequest(
+            method, path, http_version, headers_dict, body_bytes, encoded_data
+        )
 
     def parse_headers(self, headers: List[str]) -> Dict[str, str]:
         headers_dict: Dict[str, str] = {}

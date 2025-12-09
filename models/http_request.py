@@ -3,13 +3,13 @@ import json
 
 class HttpRequest:
     def __init__(
-            self,
-            method: str,
-            path: str,
-            http_version: str,
-            headers: dict[str, str],
-            body: bytes,
-            original_request_encoded: bytes,
+        self,
+        method: str,
+        path: str,
+        http_version: str,
+        headers: dict[str, str],
+        body: bytes,
+        original_request_encoded: bytes,
     ):
         self.method = method
         self.path = path

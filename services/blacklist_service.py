@@ -5,8 +5,8 @@ import fnmatch
 
 class BlacklistService:
     def __init__(self):
-        if os.path.exists('blacklist.json'):
-            with open('blacklist.json', 'r') as f:
+        if os.path.exists("../blacklist.json"):
+            with open("../blacklist.json", "r") as f:
                 self.blacklist = json.load(f)
         else:
             self.blacklist = {}
