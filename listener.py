@@ -1,9 +1,8 @@
 import asyncio
 import logging
-
 from blacklist_service import BlacklistService
 from connection_handler import handle_connection
-from constants import CHUNK_SIZE, GREEN
+from constants import CHUNK_SIZE, RED
 from http_parser import HttpParser
 
 logger = logging.getLogger("connection_handler")
@@ -13,6 +12,9 @@ class Listener:
     def __init__(self):
         self.http_parser = HttpParser()
         self.blacklist_service = BlacklistService()
+
+        with open("public/blocked-page.html", "r", encoding="utf-8") as f:
+            self.ban_page_html = f.read()
 
     async def handle_client(self, reader: asyncio.StreamReader,
                             writer: asyncio.StreamWriter):
@@ -36,15 +38,35 @@ class Listener:
         else:
             address, port = host, 80
 
+        peer_ip, peer_port = writer.get_extra_info("peername")
+
         if self.blacklist_service.is_banned(address, port):
-            #TODO send rofls BAN WINDOW
+            logger.info(
+                f"{RED}Blocked connection: from {peer_ip}:{peer_port} to {address}:{port} "
+                f"{request.method} {request.path}"
+            )
+
+            body = self.ban_page_html.encode("utf-8")
+
+            headers = (
+                "HTTP/1.1 403 Forbidden\r\n"
+                "Content-Type: text/html; charset=utf-8\r\n"
+                f"Content-Length: {len(body)}\r\n"
+                "Connection: close\r\n"
+                "\r\n"
+            ).encode("ascii")
+
+            writer.write(headers + body)
+            await writer.drain()
             writer.close()
             await writer.wait_closed()
             return
 
-        peer_ip, peer_port = writer.get_extra_info("peername")
         logger.info(
-            f"New connection: from {peer_ip}:{peer_port} to {address}:{port} {request.method} {request.path}")
+            f"New connection: from {peer_ip}:{peer_port} to {address}:{port} "
+            f"{request.method} {request.path}"
+        )
+
         await handle_connection(address, port, request, reader, writer)
 
     async def read_full_request(self, reader):
