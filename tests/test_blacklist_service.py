@@ -4,25 +4,24 @@ from services.blacklist_service import BlacklistService
 
 @pytest.fixture
 def mock_blacklist(monkeypatch):
-    # Подменяем os.path.exists и open, чтобы не читать реальный файл
     def fake_exists(path):
         return True
 
-    data = {
+    def fake_open(path, mode="r", *args, **kwargs):
+        from io import StringIO
+        return StringIO(
+            '{"192.168.*": ["*"], "10.0.0.5": [80, 8080], "*.blocked.com": ["*"], "123.123.123.123": [443]}'
+        )
+
+    monkeypatch.setattr("os.path.exists", fake_exists)
+    monkeypatch.setattr("builtins.open", fake_open)
+
+    return {
         "192.168.*": ["*"],
         "10.0.0.5": [80, 8080],
         "*.blocked.com": ["*"],
         "123.123.123.123": [443],
     }
-
-    def fake_open(path, mode):
-        from io import StringIO
-        return StringIO('{"192.168.*": ["*"], "10.0.0.5": [80, 8080], "*.blocked.com": ["*"], "123.123.123.123": [443]}')
-
-    monkeypatch.setattr("os.path.exists", fake_exists)
-    monkeypatch.setattr("builtins.open", fake_open)
-
-    return data
 
 
 @pytest.fixture
